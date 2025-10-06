@@ -1,0 +1,1 @@
+-- TODO: criar tabelas: startup, rodada, decisao_aplicada
