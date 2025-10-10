@@ -7,6 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Modelo de domínio: Startup
+ * - mantém estado (caixa, receitaBase, reputacao, moral, rodadaAtual)
+ * - registra histórico
+ * - calcula receita da rodada (aplicando bônus)
+ * - calcula score final
+ */
 public class Startup {
     private String nome;
     private Dinheiro caixa;
