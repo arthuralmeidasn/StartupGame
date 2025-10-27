@@ -1,36 +1,49 @@
 package engine;
 
-import ui.ConsoleApp;
 import java.util.Scanner;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import model.Startup;
+import model.enums.TipoDecisao;
 import model.vo.Dinheiro;
 import model.vo.Humor;
-import model.TipoDecisao;
+import config.Config;
 
 // Executa as rodadas
+public class GameEngine {
+    private final Config config;
 
-public class GameEngine {   
+    public GameEngine() {
+        this.config = new Config();
+    }
+
+    private static List<Startup> criarStartupsIniciais() {
+        // Três startups padrão (pode trocar por input do usuário)
+        List<Startup> list = new ArrayList<>();
+        list.add(new Startup("AlphaTech", new Dinheiro(100_000),
+                new Dinheiro(10_000),
+                new Humor(50),
+                new Humor(60)));
+
+        list.add(new Startup("BioNova", new Dinheiro(80_000),
+                new Dinheiro(7_000),
+                new Humor(55),
+                new Humor(55)));
+
+        list.add(new Startup("CloudZ", new Dinheiro(110_000),
+                new Dinheiro(12_000),
+                new Humor(450),
+                new Humor(65)));
+        return list;
+    }
 
     public void executar() {
-        int totalRodadas = 8;
-        Scanner IN = new Scanner(System.in);
-        List<Startup> startups = new ArrayList<>();
-
-        System.out.println("--Bem-vindo ao jogo Startup Game--");
-        System.out.println("Digite o nome da sua Startup: ");
-        String nomeStartup = IN.nextLine();
-
-        Dinheiro caixaInicial = new Dinheiro(50000.0);
-        Dinheiro receitaInicial = new Dinheiro(0.0);
-        Humor reputacaoInicial = new Humor(50);
-        Humor moralInicial = new Humor (50);
-
-        Startup suaStartup = new Startup(nomeStartup, caixaInicial, receitaInicial, reputacaoInicial, moralInicial);
-        startups.add(suaStartup);
+        int totalRodadas = config.totalRodadas();
+        List<Startup> startups = criarStartupsIniciais();
 
         for (int rodada = 1; rodada <= totalRodadas; rodada++) {
             System.out.println("\n====== RODADA " + rodada + " / " + totalRodadas + " ======");
@@ -68,6 +81,7 @@ public class GameEngine {
 
         // (Opcional) Histórico detalhado
         System.out.print("\nDeseja ver histórico (s/n)? ");
+        Scanner IN = new Scanner(System.in);
         if (IN.nextLine().trim().equalsIgnoreCase("s")) {
             for (Startup s : startups) {
                 System.out.println("\n-- Histórico: " + s.getNome() + " --");
@@ -78,19 +92,73 @@ public class GameEngine {
         System.out.println("\nFim. Obrigado por jogar!");
     }
 
-    // Aplica lógica de uma decisão  específica
+    // Aplica lógica de uma decisão específica
     private void aplicarDecisao(Startup s, TipoDecisao d) {
-        System.out.println("Aplicando decisão: "+ d.name());
+        switch (d) {
+            case MARKETING -> {
+                s.setCaixa(s.getCaixa().subtrair(new Dinheiro(10_000)));
+                s.setReputacao(s.getReputacao().aumentar(5));
+                s.addBonusPercentReceitaProx(0.03);
+                s.registrar("Marketing: -R$10k caixa, +5 rep, +3% receita na próxima rodada");
+            }
 
+            case EQUIPE -> {
+                s.setCaixa(s.getCaixa().subtrair(new Dinheiro(5_000)));
+                s.setMoral(s.getMoral().aumentar(7));
+                s.registrar("Equipe (treinamento): -R$5k caixa, +7 moral");
+            }
+
+            case PRODUTO -> {
+                s.setCaixa(s.getCaixa().subtrair(new Dinheiro(8_000)));
+                s.addBonusPercentReceitaProx(0.04);
+                s.registrar("Produto (refino): -R$8k caixa, +4% receita na próxima rodada");
+            }
+
+            case INVESTIDORES -> {
+                boolean aprovado = Math.random() < 0.60;
+                if (aprovado) {
+                    s.setCaixa(s.getCaixa().somar(new Dinheiro(40_000)));
+                    s.setReputacao(s.getReputacao().aumentar(3));
+                    s.registrar("Investidores: APROVADO +R$40k caixa, +3 rep");
+                } else {
+                    s.setReputacao(s.getReputacao().reduzir(2));
+                    s.registrar("Investidores: REPROVADO (0 caixa), -2 rep");
+                }
+            }
+            case CORTAR_CUSTOS -> {
+                s.setCaixa(s.getCaixa().somar(new Dinheiro(8_000)));
+                s.setMoral(s.getMoral().reduzir(5));
+                s.registrar("Cortar custos: +R$8k caixa, -5 moral");
+            }
+        }
+        s.clamparHumor();
     }
 
     // Aplica lógica do fim da rodada
     private void fecharRodada(Startup s) {
-        System.out.println("Fechando rodada para "+ s.getNome());
+        double receita = s.receitaRodada();
+
+        s.setCaixa(s.getCaixa().somar(new Dinheiro(receita)));
+
+        // Crescimento leve da receita base influenciado por reputação/moral
+        double fatorReputacao = (s.getReputacao().valor() / 100.0) * 0.01;
+
+        double fatorMoral = (s.getMoral().valor() / 100.0) * 0.005;
+
+        double fatorCrescimento = 1.0 + fatorReputacao + fatorMoral;
+
+        double novaReceitaBase = s.getReceitaBase().valor() * fatorCrescimento;
+        s.setReceitaBase(new Dinheiro(novaReceitaBase));
+
+        s.registrar(String.format(Locale.US,
+                "Fechamento: receita R$%.2f; nova receitaBase R$%.2f; caixa R.2f",
+                round2(receita),
+                round2(s.getReceitaBase().valor()),
+                round2(s.getCaixa().valor())));
     }
 
     // Método utilitário para arredondar 2 casas decimais
-    private double round2(double val) {
-        return Math.round(val * 100.0) / 100.0;
+    private static double round2(double v) {
+        return BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 }
