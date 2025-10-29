@@ -1,6 +1,14 @@
 package engine;
 
 import java.util.Scanner;
+
+import actions.CortarCustosStrategy;
+import actions.DecisaoStrategy;
+import actions.EquipeStrategy;
+import actions.InvestidoresStrategy;
+import actions.MarketingStrategy;
+import actions.ProdutoStrategy;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -12,6 +20,7 @@ import model.enums.TipoDecisao;
 import model.vo.Dinheiro;
 import model.vo.Humor;
 import config.Config;
+import model.Deltas;
 
 // Executa as rodadas
 public class GameEngine {
@@ -94,44 +103,20 @@ public class GameEngine {
 
     // Aplica lógica de uma decisão específica
     private void aplicarDecisao(Startup s, TipoDecisao d) {
+        DecisaoStrategy estrategiaEscolhida;
+
         switch (d) {
-            case MARKETING -> {
-                s.setCaixa(s.getCaixa().subtrair(new Dinheiro(10_000)));
-                s.setReputacao(s.getReputacao().aumentar(5));
-                s.addBonusPercentReceitaProx(0.03);
-                s.registrar("Marketing: -R$10k caixa, +5 rep, +3% receita na próxima rodada");
-            }
-
-            case EQUIPE -> {
-                s.setCaixa(s.getCaixa().subtrair(new Dinheiro(5_000)));
-                s.setMoral(s.getMoral().aumentar(7));
-                s.registrar("Equipe (treinamento): -R$5k caixa, +7 moral");
-            }
-
-            case PRODUTO -> {
-                s.setCaixa(s.getCaixa().subtrair(new Dinheiro(8_000)));
-                s.addBonusPercentReceitaProx(0.04);
-                s.registrar("Produto (refino): -R$8k caixa, +4% receita na próxima rodada");
-            }
-
-            case INVESTIDORES -> {
-                boolean aprovado = Math.random() < 0.60;
-                if (aprovado) {
-                    s.setCaixa(s.getCaixa().somar(new Dinheiro(40_000)));
-                    s.setReputacao(s.getReputacao().aumentar(3));
-                    s.registrar("Investidores: APROVADO +R$40k caixa, +3 rep");
-                } else {
-                    s.setReputacao(s.getReputacao().reduzir(2));
-                    s.registrar("Investidores: REPROVADO (0 caixa), -2 rep");
-                }
-            }
-            case CORTAR_CUSTOS -> {
-                s.setCaixa(s.getCaixa().somar(new Dinheiro(8_000)));
-                s.setMoral(s.getMoral().reduzir(5));
-                s.registrar("Cortar custos: +R$8k caixa, -5 moral");
+            case MARKETING -> estrategiaEscolhida = new MarketingStrategy();
+            case EQUIPE -> estrategiaEscolhida = new EquipeStrategy();
+            case PRODUTO -> estrategiaEscolhida = new ProdutoStrategy();
+            case INVESTIDORES -> estrategiaEscolhida = new InvestidoresStrategy();
+            case CORTAR_CUSTOS -> estrategiaEscolhida = new CortarCustosStrategy();
+            default -> {
+                System.err.println("Decisão não reconhecida: " + d);
+                return;
             }
         }
-        s.clamparHumor();
+        estrategiaEscolhida.aplicar(s);
     }
 
     // Aplica lógica do fim da rodada
@@ -142,11 +127,8 @@ public class GameEngine {
 
         // Crescimento leve da receita base influenciado por reputação/moral
         double fatorReputacao = (s.getReputacao().valor() / 100.0) * 0.01;
-
         double fatorMoral = (s.getMoral().valor() / 100.0) * 0.005;
-
         double fatorCrescimento = 1.0 + fatorReputacao + fatorMoral;
-
         double novaReceitaBase = s.getReceitaBase().valor() * fatorCrescimento;
         s.setReceitaBase(new Dinheiro(novaReceitaBase));
 
