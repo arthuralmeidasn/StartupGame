@@ -1,5 +1,11 @@
 package engine;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 
 import actions.CortarCustosStrategy;
@@ -8,21 +14,13 @@ import actions.EquipeStrategy;
 import actions.InvestidoresStrategy;
 import actions.MarketingStrategy;
 import actions.ProdutoStrategy;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
+import config.Config;
 import model.Startup;
 import model.enums.TipoDecisao;
 import model.vo.Dinheiro;
 import model.vo.Humor;
 import persistence.StartupRepository;
-import config.Config;
 
-// Executa as rodadas
 public class GameEngine {
     private final Config config;
     private final StartupRepository repository;
@@ -35,7 +33,6 @@ public class GameEngine {
     }
 
     private static List<Startup> criarStartupsIniciais() {
-        // Três startups padrão (pode trocar por input do usuário)
         List<Startup> list = new ArrayList<>();
         list.add(new Startup("AlphaTech", new Dinheiro(100_000),
                 new Dinheiro(10_000),
@@ -67,26 +64,21 @@ public class GameEngine {
                 System.out.println("\n-- Jogador " + idx++ + ": " + s.getNome() + " --");
                 System.out.println(s);
 
-                // Seleciona decisões (até 3) de forma robusta
                 List<TipoDecisao> escolhidas = ui.ConsoleApp.escolherDecisoesNoConsole(s);
 
-                // Aplica cada decisão
                 for (TipoDecisao d : escolhidas) {
                     aplicarDecisao(s, d);
                 }
 
-                // Fecha a rodada desta startup (receita + pequeno crescimento da base)
                 fecharRodada(s);
 
                 repository.salvar(s);
                 System.out.println(" [Autosave] Progresso de " + s.getNome() + " salvo.");
 
-                // Resumo
                 System.out.println("Resumo pós-rodada: " + s);
             }
         }
 
-        // 3) Ranking final
         System.out.println("\n====== RELATÓRIO FINAL ======");
         startups.sort(Comparator.comparingDouble(Startup::scoreFinal).reversed());
         int pos = 1;
@@ -95,7 +87,6 @@ public class GameEngine {
                     pos++, s.getNome(), round2(s.scoreFinal()), s.toString());
         }
 
-        // (Opcional) Histórico detalhado
         System.out.print("\nDeseja ver histórico (s/n)? ");
         Scanner IN = new Scanner(System.in);
         if (IN.nextLine().trim().equalsIgnoreCase("s")) {
@@ -108,7 +99,6 @@ public class GameEngine {
         System.out.println("\nFim. Obrigado por jogar!");
     }
 
-    // Aplica lógica de uma decisão específica
     private void aplicarDecisao(Startup s, TipoDecisao d) {
         DecisaoStrategy estrategiaEscolhida;
 
@@ -126,13 +116,11 @@ public class GameEngine {
         estrategiaEscolhida.aplicar(s);
     }
 
-    // Aplica lógica do fim da rodada
     private void fecharRodada(Startup s) {
         double receita = s.receitaRodada();
 
         s.setCaixa(s.getCaixa().somar(new Dinheiro(receita)));
 
-        // Crescimento leve da receita base influenciado por reputação/moral
         double fatorReputacao = (s.getReputacao().valor() / 100.0) * 0.01;
         double fatorMoral = (s.getMoral().valor() / 100.0) * 0.005;
         double fatorCrescimento = 1.0 + fatorReputacao + fatorMoral;
@@ -146,7 +134,6 @@ public class GameEngine {
                 round2(s.getCaixa().valor())));
     }
 
-    // Método utilitário para arredondar 2 casas decimais
     private static double round2(double v) {
         return BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }

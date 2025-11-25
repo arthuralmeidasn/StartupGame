@@ -11,18 +11,14 @@ import model.enums.TipoDecisao;
 public class ConsoleApp {
     private static final Config config = new Config();
     private static final Scanner IN = new Scanner(System.in);
-    private static final int MAX_DECISOES_POR_RODADA = 3;
 
 
     public void start(){
         System.out.println("Startup Game - Console");
         System.out.println("total.rodadas=" + config.totalRodadas());
         System.out.println("max.decisoes.por.rodada=" + config.maxDecisoesPorRodada());
-        /*  TODO: implementar menu, criação/continuação de jogo e loop chamando GameEngine
-        */
     }
 
-    /** Menu robusto: Enter ou 0 finaliza; Q encerra o jogo inteiro. */
     public static List<TipoDecisao> escolherDecisoesNoConsole(Startup s) {
         List<TipoDecisao> todas = Arrays.asList(TipoDecisao.values());
         List<TipoDecisao> escolhidas = new ArrayList<>();

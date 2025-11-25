@@ -7,13 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Modelo de domínio: Startup
- * - mantém estado (caixa, receitaBase, reputacao, moral, rodadaAtual)
- * - registra histórico
- * - calcula receita da rodada (aplicando bônus)
- * - calcula score final
- */
 public class Startup {
     private String nome;
     private Dinheiro caixa;
@@ -41,11 +34,6 @@ public class Startup {
         return receita;
     }
 
-    public void clamparHumor() {
-        reputacao = reputacao; // VO já valida limites na criação
-        moral = moral;
-    }
-
     public double scoreFinal() {
         return reputacao.valor() * 0.35
              + moral.valor() * 0.25
@@ -53,7 +41,6 @@ public class Startup {
              + (receitaBase.valor() / 1000.0) * 0.25;
     }
 
-    // getters e setters mínimos
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
 

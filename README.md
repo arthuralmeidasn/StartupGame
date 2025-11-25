@@ -75,8 +75,6 @@ javac -d bin -cp "src;lib/h2-2.2.224.jar" src/Main.java src/config/*.java src/mo
 **Executar:**
 
 ```bash
-# Execute incluindo a pasta bin e o jar do H2
-# (Windows use ponto-e-vírgula ';', Linux/Mac use dois-pontos ':')
 java -cp "bin;lib/h2-2.2.224.jar" Main
 ```
 
@@ -84,7 +82,7 @@ java -cp "bin;lib/h2-2.2.224.jar" Main
 
 ## Configurações
 
-O arquivo `resources/game.properties` (ou na raiz de `src`) define as regras:
+O arquivo `src/game.properties` define as regras:
 
   - `total.rodadas=8`
   - `max.decisoes.por.rodada=3`
