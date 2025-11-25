@@ -19,15 +19,19 @@ import model.Startup;
 import model.enums.TipoDecisao;
 import model.vo.Dinheiro;
 import model.vo.Humor;
+import persistence.StartupRepository;
 import config.Config;
-import model.Deltas;
 
 // Executa as rodadas
 public class GameEngine {
     private final Config config;
+    private final StartupRepository repository;
+
 
     public GameEngine() {
         this.config = new Config();
+        this.repository = new StartupRepository();
+        this.repository.prepararBanco();
     }
 
     private static List<Startup> criarStartupsIniciais() {
@@ -45,7 +49,7 @@ public class GameEngine {
 
         list.add(new Startup("CloudZ", new Dinheiro(110_000),
                 new Dinheiro(12_000),
-                new Humor(450),
+                new Humor(50),
                 new Humor(65)));
         return list;
     }
@@ -73,6 +77,9 @@ public class GameEngine {
 
                 // Fecha a rodada desta startup (receita + pequeno crescimento da base)
                 fecharRodada(s);
+
+                repository.salvar(s);
+                System.out.println(" [Autosave] Progresso de " + s.getNome() + " salvo.");
 
                 // Resumo
                 System.out.println("Resumo pós-rodada: " + s);
